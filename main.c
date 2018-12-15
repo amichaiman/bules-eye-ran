@@ -9,15 +9,40 @@
 #define MIN_DIGIT 1
 
 int generate_password();
-void begin_game(int password);
+void begin_game(int max_num_of_tries, int password);
+
+enum difficulty {
+    EASY = 25,
+    MEDIUM = 15,
+    HARD = 10,
+};
 
 int main(){
     int password;
     srand(time(NULL));
+    int input;
 
     password = generate_password();
     /*  assuming only one difficulty level   */
-    begin_game(password);
+
+    printf("enter difficulty:\n1)easy\n2)medium\n3)hard\n4)crazy\n");
+    scanf("%d", &input);
+
+    do {
+        switch (input) {
+            case 1:
+                begin_game(EASY, password); break;
+            case 2:
+                begin_game(MEDIUM, password); break;
+            case 3:
+                begin_game(HARD, password); break;
+            case 4:
+                begin_game(rand()%(EASY-HARD+1)+EASY, password); break;
+            default:
+                printf("invalid input, try again\n");
+                scanf("%d", &input);
+        }
+    } while(input < 1 || input > 4);
 
     return 0;
 }
@@ -93,18 +118,46 @@ int get_num_of_misses(int password, int user_guess) {
     return num_of_misses;
 }
 
-void begin_game(int password) {
+int is_legal_digit(int digit) {
+    return digit >=MIN_DIGIT && digit <=MAX_DIGIT; //digit is legal only if between 1 and 6
+}
+
+int is_legal_guess(int guess) {
+    int i;
+
+    for (i=0; i<PASSWORD_LEN; i++) {
+        /* if guess is zero, it was too short */
+        if (guess == 0 || !is_legal_digit(guess%10)) {
+            return 0;
+        }
+        guess /= 10;
+    }
+    /* if guess now ISNT 0, it was too long */
+    return guess == 0;
+}
+void begin_game(int max_num_of_tries, int password) {
     int num_of_hits = 0;
     int num_of_misses = 0;
+    int num_of_tries = 0;
     int user_guess;
 
-    while (num_of_hits < PASSWORD_LEN) {
+    while (num_of_hits < PASSWORD_LEN && num_of_tries < max_num_of_tries) {
         printf("enter your guess:\n");
         scanf("%d", &user_guess);
+        while (!is_legal_guess(user_guess)) {
+            printf("invalid guess. try again\n");
+            scanf("%d", &user_guess);
+        }
         num_of_hits = get_num_of_hits(password, user_guess); //get number of hits
         num_of_misses = get_num_of_misses(password, user_guess); //get number of misses
         printf("number of hits: %d\nnumber of misses: %d\n", num_of_hits, num_of_misses);
+        num_of_tries++;
     }
 
-    printf("you have won!");
+    if (num_of_hits == PASSWORD_LEN) {
+        printf("you have won!");
+    } else {
+        printf("you have lost!");
+    }
+
 }
